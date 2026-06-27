@@ -4,6 +4,7 @@ import connectDB from './config/db.js';
 import cors from 'cors';
 import contractRoutes from './routes/contractRoutes.js';
 import vinRoutes from './routes/vinRoutes.js';
+import chatRoutes from './routes/chatRoutes.js';
 
 dotenv.config();
 connectDB();
@@ -20,6 +21,7 @@ app.use(express.json());
 // Register Api route
 app.use('/api/contracts', contractRoutes);
 app.use('/api/vin', vinRoutes);
+app.use('/api/chat', chatRoutes);
 
 //Testing route
 app.get('/', (req, res) => {

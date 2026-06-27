@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 
-const analyseContractText = async (contractText) => {
+export const analyseContractText = async (contractText) => {
     try {
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) {
@@ -51,6 +51,55 @@ const analyseContractText = async (contractText) => {
     } catch (error) {
         console.error(`Error in geminiService :`, error);
         throw new Error(`Gemini Analysis failed : ${error.message}`);
+    }
+}
+
+export const chatWithCoach = async (message, history = [], contractAnalysis = null) => {
+    try {
+        const apiKey = process.env.GEMINI_API_KEY;
+        const genAI = new GoogleGenerativeAI(apiKey);
+
+        let systemInstruction = `
+        You are an expert car buying and lease negotiation coach. Your goal is to guide the user in getting the absolute best deal on their car purchase, lease, or loan.
+        Be strategic, professional, friendly, and practical. 
+        - Recommend specific questions they should ask the dealer.
+        - Point out terms they should negotiate (e.g., money factor/APR, document fees, cap cost reduction).
+        - Help draft emails or text messages to send to dealers.
+        `;
+
+        if (contractAnalysis) {
+            systemInstruction += `\n
+            Here is the details of the vehical contract/offer they are currently trying to negotiate : 
+            -Contract Type : ${contractAnalysis.contractType}
+            -Interest Rate / APR : ${contractAnalysis.interestRateOrAPR}%
+            -Monthly Payment : ${contractAnalysis.monthlyPayment}
+            -DownPayment : ${contractAnalysis.downPayment}
+            -Residual Value : ${contractAnalysis.residualValue}
+            -Mileage Allowance : ${contractAnalysis.mileageAllowanceYearly} miles/year
+            -Overage Fee : ${contractAnalysis.mileageOverageFeePerMile}/mile
+            -Disposition Fee : ${contractAnalysis.dispositionFee}
+            - Red Flags: ${JSON.stringify(contractAnalysis.redFlags)}
+            - Fairness Score: ${contractAnalysis.fairnessScore}/100
+            - Summary: ${contractAnalysis.fairnessExplanation}
+
+            Provide advice tailored to negotiate these specific numbers with their dealer.
+            `;
+        }
+
+        const model = genAI.getGenerativeModel({
+            model : 'gemini-2.5-flash',
+            systemInstruction : systemInstruction
+        });
+
+        const chat = model.startChat({
+            history : history
+        });
+
+        const result = await chat.sendMessage(message);
+        return result.response.text();
+    } catch (error) {
+        console.error('Error in chatWithCoach service', error);
+        throw new Error(`Chatbot error : ${error.message}`);
     }
 }
 
