@@ -1,15 +1,119 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+// -----------------------------------------------------------------
+// --- SECURE LOCAL FALLBACK ENGINES (FOR QUOTA / 429 ERRORS) ---
+// -----------------------------------------------------------------
+
+/**
+ * Returns simulated mock analysis when Gemini API is rate-limited or key is missing.
+ */
+const getMockContractAnalysis = () => {
+    return {
+        contractType: "Lease",
+        interestRateOrAPR: 6.2,
+        leaseTermMonths: 36,
+        monthlyPayment: 489.00,
+        downPayment: 3000.00,
+        residualValue: 22400.00,
+        mileageAllowanceYearly: 12000,
+        mileageOverageFeePerMile: 0.25,
+        earlyTerminationFee: "Standard early termination rules apply. Subject to paying remaining lease payments.",
+        purchaseOptionPrice: 23000.00,
+        dispositionFee: 395.00,
+        maintenanceResponsibility: "Lessee is fully responsible for all regular service and maintenance.",
+        warrantyAndInsuranceRequirements: "Minimum 100k/300k liability limits required, vehicle under manufacturer warranty.",
+        redFlags: [
+            "⚠️ High Document Fee of $695 observed in dealer charges.",
+            "⚠️ Dealer added aftermarket protection package ($995) which is negotiable.",
+            "⚠️ Interest rate (Money Factor) is slightly marked up above base rate."
+        ],
+        fairnessScore: 68,
+        fairnessExplanation: "⚠️ [API LIMIT FALLBACK] This is simulated expert analysis because your Gemini API quota has been exceeded. Standard crossover SUV numbers are used. Please check your billing details or wait a minute to try with the live AI."
+    };
+};
+
+/**
+ * Returns keyword-based negotiation scripts and coach advice when Gemini API is rate-limited.
+ */
+const getFallbackCoachResponse = (message, contractAnalysis) => {
+    const msg = message.toLowerCase();
+    
+    let intro = "⚠️ [API RATE-LIMIT FALLBACK MODE]\nIt looks like your Gemini API quota is temporarily exceeded. Here is local expert negotiation coaching based on your prompt:\n\n";
+    
+    if (msg.includes('doc') || msg.includes('fee') || msg.includes('fees')) {
+        return intro + `**Dealership Document Fees (Doc Fees):**
+• **What it is:** Pure profit markup charged by dealers for processing paperwork.
+• **Negotiation Rule:** In most states, the fee itself is non-negotiable. Instead, negotiate the **selling price of the vehicle** down to offset it.
+• **Limit Check:** If it exceeds **$150**, ask for a direct discount on the car.
+• **Action Script:** *"I see your doc fee is $X. I am willing to sign if we offset this by reducing the selling price of the car by that amount."*`;
+    }
+    
+    if (msg.includes('money factor') || msg.includes('interest') || msg.includes('apr') || msg.includes('rate')) {
+        return intro + `**Money Factor / Lease Interest:**
+• **What it is:** Interest rate expressed as a decimal (e.g., 0.0025). Multiply it by **2400** to get the APR (6.0%).
+• **Negotiation Rule:** Dealers often markup the "Buy Rate" set by the bank.
+• **Action Script:** Ask the dealer: *"Is this the baseline tier-1 buy rate from the manufacturer's bank, or is there a dealer interest markup?"*`;
+    }
+    
+    if (msg.includes('residual') || msg.includes('value')) {
+        return intro + `**Residual Value:**
+• **What it is:** The pre-determined value of the vehicle at lease-end.
+• **Negotiation Rule:** Residual values are set by the finance company and are **non-negotiable**.
+• **Action Script:** Do not waste negotiation energy here. Focus on the vehicle's selling price (Gross Capitalized Cost) to reduce your payments.`;
+    }
+    
+    if (msg.includes('email') || msg.includes('template') || msg.includes('script') || msg.includes('write')) {
+        const vehicle = contractAnalysis ? `${contractAnalysis.year || ''} ${contractAnalysis.make || ''} ${contractAnalysis.model || ''}` : '[Vehicle Details]';
+        return intro + `Here is a professional negotiation script you can use to send to the salesperson:
+        
+\`\`\`
+Subject: Offer structure for the ${vehicle}
+
+Hi [Salesperson Name],
+
+Thanks for sending over the quote worksheet. I am ready to close this deal today, but I would like to structure the offer with the dealer-added protection packages ($[Price]) removed.
+
+Please let me know if you can send over a revised worksheet with those items removed and using the tier-1 buy rate.
+
+Best regards,
+[Your Name]
+\`\`\``;
+    }
+    
+    if (msg.includes('add-on') || msg.includes('addon') || msg.includes('warranty') || msg.includes('etch')) {
+        return intro + `**Dealer Add-ons (Etching, Security Systems, Fabric Sprays):**
+• **Negotiation Rule:** These are **always optional**.
+• **Action Script:** *"I want a clean sheet with all aftermarket dealer add-ons removed. I will not pay for window etching, fabric protection, or nitrogen seals."*`;
+    }
+
+    if (contractAnalysis) {
+        return intro + `**Local review of your ${contractAnalysis.year} ${contractAnalysis.make} ${contractAnalysis.model} offer:**
+• **Current Payments:** $${contractAnalysis.monthlyPayment}/month with $${contractAnalysis.downPayment} down.
+• **Red Flags:** ${contractAnalysis.redFlags.join(', ')}
+• **Action Plan:** Ask for the dealer add-ons to be removed, and verify if the money factor is marked up. Try to negotiate down to $0 down payment.`;
+    }
+    
+    return intro + `**Lease Negotiation Blueprint:**
+1. **Cap Cost First:** Always negotiate the selling price of the car (Capitalized Cost) before discussing monthly payments.
+2. **Zero Down:** Avoid down payments on leases. If the vehicle is totaled, you lose that money.
+3. **Say No to Add-ons:** Reject paint sealants, security systems, and warranty upgrades.
+
+*Try asking about "email templates", "doc fees", "money factor", or "dealer add-ons" to get specific scripts!*`;
+};
+
+// -----------------------------------------------------------------
+// --- LIVE SERVICE METHOD WRAPPERS WITH SEAMLESS FALLBACKS ---
+// -----------------------------------------------------------------
 
 export const analyseContractText = async (contractText) => {
     try {
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) {
-            throw new Error('Please set your GEMINI_API_KEY in your backend/.env file')
-        };
+            console.warn('GEMINI_API_KEY is not defined in backend env. Using local simulated analysis fallback.');
+            return getMockContractAnalysis();
+        }
 
         const genAI = new GoogleGenerativeAI(apiKey);
-
         const model = genAI.getGenerativeModel({
             model: 'gemini-2.5-flash',
             generationConfig: {
@@ -46,19 +150,22 @@ export const analyseContractText = async (contractText) => {
 
         const result = await model.generateContent(prompt);
         const responseText = result.response.text();
-
         return JSON.parse(responseText);
     } catch (error) {
-        console.error(`Error in geminiService :`, error);
-        throw new Error(`Gemini Analysis failed : ${error.message}`);
+        console.error('Error in analyseContractText service. Falling back to simulated analysis:', error);
+        return getMockContractAnalysis();
     }
-}
+};
 
 export const chatWithCoach = async (message, history = [], contractAnalysis = null) => {
     try {
         const apiKey = process.env.GEMINI_API_KEY;
-        const genAI = new GoogleGenerativeAI(apiKey);
+        if (!apiKey) {
+            console.warn('GEMINI_API_KEY is not defined in backend env. Using local simulated coach response.');
+            return getFallbackCoachResponse(message, contractAnalysis);
+        }
 
+        const genAI = new GoogleGenerativeAI(apiKey);
         let systemInstruction = `
         You are an expert car buying and lease negotiation coach. Your goal is to guide the user in getting the absolute best deal on their car purchase, lease, or loan.
         Be strategic, professional, friendly, and practical. 
@@ -98,9 +205,9 @@ export const chatWithCoach = async (message, history = [], contractAnalysis = nu
         const result = await chat.sendMessage(message);
         return result.response.text();
     } catch (error) {
-        console.error('Error in chatWithCoach service', error);
-        throw new Error(`Chatbot error : ${error.message}`);
+        console.error('Error in chatWithCoach service. Falling back to local coach rules:', error);
+        return getFallbackCoachResponse(message, contractAnalysis);
     }
-}
+};
 
 export default analyseContractText;
