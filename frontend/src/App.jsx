@@ -8,6 +8,8 @@ import NegotiationCoach from './components/NegotiationCoach.jsx';
 import Footer from './components/Footer.jsx';
 import AuthView from './components/AuthView.jsx';
 import OfferComparision from './components/OfferComparision.jsx';
+import SettingsView from './components/SettingsView.jsx';
+import BuyCredits from './components/BuyCredits.jsx';
 import { Agentation } from 'agentation';
 
 import darkModeLogo from './assets/darkModeTextual.png';
@@ -161,6 +163,20 @@ function App() {
           {activeTab === 'compare' && (
             isAuthenticated ? (
               <OfferComparision />
+            ) : (
+              <AuthView setIsAuthenticated={setIsAuthenticated} setUser={setUser} />
+            )
+          )}
+          {activeTab === 'settings' && (
+            isAuthenticated ? (
+              <SettingsView />
+            ) : (
+              <AuthView setIsAuthenticated={setIsAuthenticated} setUser={setUser} />
+            )
+          )}
+          {activeTab === 'buy_credits' && (
+            isAuthenticated ? (
+              <BuyCredits />
             ) : (
               <AuthView setIsAuthenticated={setIsAuthenticated} setUser={setUser} />
             )

@@ -8,6 +8,8 @@ import {
   Sun,
   Moon,
   GitCompare,
+  Settings,
+  Coins,
 } from 'lucide-react';
 
 import darkModeLogo from '../assets/darkModeTextual.png';
@@ -78,6 +80,22 @@ const Sidebar = ({ activeTab, setActiveTab, setIsAuthenticated, setUser, theme, 
         >
           <GitCompare size={20} />
           <span>Compare Deals</span>
+        </div>
+
+        <div
+          className={`sidebar-item ${activeTab === 'settings' ? 'active' : ''}`}
+          onClick={() => setActiveTab('settings')}
+        >
+          <Settings size={20} />
+          <span>Settings</span>
+        </div>
+
+        <div
+          className={`sidebar-item ${activeTab === 'buy_credits' ? 'active' : ''}`}
+          onClick={() => setActiveTab('buy_credits')}
+        >
+          <Coins size={20} />
+          <span>Buy Credits</span>
         </div>
 
         {/* Theme Toggle Button */}
