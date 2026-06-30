@@ -50,3 +50,33 @@ export const getContracts = async (req, res) => {
         });
     }
 }
+
+export const deleteContract = async (req, res) => {
+    try {
+        const {id} = req.params;
+
+        const contract = await Contract.findById(id);
+        if(!contract) {
+            return res.status(404).json({
+                error : 'Contract not found',
+            });
+        }
+
+        if(contract.userId.toString() !== req.user.id) {
+            return res.status(403).json({
+                error : 'You do not have permission to delete this contract'
+            });
+        }
+
+        await Contract.findByIdAndDelete(id);
+        return res.status(200).json({
+            message : 'Contract deleted successfully'
+        })
+
+    } catch (error) {
+        console.error('Error in deleteContract controller : ', error);
+        return res.status(500).json({
+            error : 'Failed to delete the contract',
+        })
+    }
+}
