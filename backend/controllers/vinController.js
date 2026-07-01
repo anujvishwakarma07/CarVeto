@@ -84,12 +84,14 @@ export const checkIndianPlate = async (req, res) => {
 
     try {
         const apiKey = process.env.INDIAN_RC_API_KEY;
+        const professionalNotice = 'Sandbox Fallback Active: The live vehicle registry query limit has been exceeded for this demonstration profile. To prevent system downtime, VetoCar has automatically routed your request to our local sandbox engine to display simulated specifications. To configure your own dedicated API credentials, visit Settings.';
+        
         if (!apiKey) {
             console.warn('INDIAN_RC_API_KEY is not defined in backend env. Displaying simulated sandbox data.');
             return res.status(200).json({
                 message: 'Sandbox demo mode. Displaying simulated data.',
                 isDummy: true,
-                comment: 'It is dummy data, for getting the real data you have to donate.',
+                comment: professionalNotice,
                 vehicleInfo: {
                     registrationNumber: plate.trim().toUpperCase(),
                     ownerName: 'ROHIT SHARMA (SANDBOX)',
@@ -109,7 +111,7 @@ export const checkIndianPlate = async (req, res) => {
                     seatCapacity: '5',
                     fuelNorms: 'BHARAT STAGE VI (BS-VI)',
                     isDummy: true,
-                    comment: 'It is dummy data, for getting the real data you have to donate.'
+                    comment: professionalNotice
                 }
             });
         }
@@ -152,7 +154,7 @@ export const checkIndianPlate = async (req, res) => {
             return res.status(200).json({
                 message: 'Quota exceeded. Displaying sandbox simulated data.',
                 isDummy: true,
-                comment: 'It is dummy data, for getting the real data you have to donate.',
+                comment: professionalNotice,
                 vehicleInfo: {
                     registrationNumber: plate.trim().toUpperCase(),
                     ownerName: 'ROHIT SHARMA (SANDBOX)',
@@ -172,7 +174,7 @@ export const checkIndianPlate = async (req, res) => {
                     seatCapacity: '5',
                     fuelNorms: 'BHARAT STAGE VI (BS-VI)',
                     isDummy: true,
-                    comment: 'It is dummy data, for getting the real data you have to donate.'
+                    comment: professionalNotice
                 }
             });
         }
@@ -218,7 +220,7 @@ export const checkIndianPlate = async (req, res) => {
             return res.status(200).json({
                 message: 'Quota exceeded. Displaying sandbox simulated data.',
                 isDummy: true,
-                comment: 'It is dummy data, for getting the real data you have to donate.',
+                comment: 'Sandbox Fallback Active: The live vehicle registry query limit has been exceeded for this demonstration profile. To prevent system downtime, VetoCar has automatically routed your request to our local sandbox engine to display simulated specifications. To configure your own dedicated API credentials, visit Settings.',
                 vehicleInfo: {
                     registrationNumber: plate.trim().toUpperCase(),
                     ownerName: 'ROHIT SHARMA (SANDBOX)',
@@ -238,7 +240,7 @@ export const checkIndianPlate = async (req, res) => {
                     seatCapacity: '5',
                     fuelNorms: 'BHARAT STAGE VI (BS-VI)',
                     isDummy: true,
-                    comment: 'It is dummy data, for getting the real data you have to donate.'
+                    comment: 'Sandbox Fallback Active: The live vehicle registry query limit has been exceeded for this demonstration profile. To prevent system downtime, VetoCar has automatically routed your request to our local sandbox engine to display simulated specifications. To configure your own dedicated API credentials, visit Settings.'
                 }
             });
         }
@@ -247,5 +249,5 @@ export const checkIndianPlate = async (req, res) => {
             error: error.message || 'Failed to decode Indian vehicle registration'
         });
     }
-};
+};;
 
